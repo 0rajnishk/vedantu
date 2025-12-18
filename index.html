@@ -147,10 +147,37 @@
                     }
                 },
                 parseCSV(text) {
-                    const lines = text.split('\n');
+                    const lines = [];
+                    let current = '';
+                    let insideQuotes = false;
+                    
+                    // Split text by newline but respect quoted fields
+                    for (let i = 0; i < text.length; i++) {
+                        const char = text[i];
+                        const nextChar = text[i + 1];
+                        
+                        if (char === '"') {
+                            if (insideQuotes && nextChar === '"') {
+                                current += '"';
+                                i++;
+                            } else {
+                                insideQuotes = !insideQuotes;
+                            }
+                            current += char;
+                        } else if (char === '\n' && !insideQuotes) {
+                            if (current.trim()) lines.push(current);
+                            current = '';
+                        } else {
+                            current += char;
+                        }
+                    }
+                    if (current.trim()) lines.push(current);
+                    
+                    // Parse header
                     const header = lines[0];
                     const keys = this.parseCSVLine(header);
                     
+                    // Parse rows
                     return lines.slice(1).map(line => {
                         if (!line.trim()) return null;
                         const values = this.parseCSVLine(line);
@@ -187,9 +214,14 @@
                 },
                 async fetchSheet() {
                     const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1-aRmuDOSu38Oid975ZiAvS3XER-cpO-ldsmfPz46kP8/export?format=csv&gid=0';
-                    const res = await fetch(SHEET_CSV_URL);
-                    const text = await res.text();
-                    this.rows = this.parseCSV(text);
+                    const corsProxy = 'https://cors-anywhere.herokuapp.com/';
+                    try {
+                        const res = await fetch(corsProxy + SHEET_CSV_URL);
+                        const text = await res.text();
+                        this.rows = this.parseCSV(text);
+                    } catch (e) {
+                        console.error('Fetch failed. Make sure the sheet is publicly accessible or use a CORS proxy.', e);
+                    }
                 }
             },
             mounted() {
