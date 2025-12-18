@@ -147,11 +147,10 @@
                     }
                 },
                 parseCSV(text) {
-                    const lines = [];
+                    const rows = [];
                     let current = '';
                     let insideQuotes = false;
                     
-                    // Split text by newline but respect quoted fields
                     for (let i = 0; i < text.length; i++) {
                         const char = text[i];
                         const nextChar = text[i + 1];
@@ -165,21 +164,18 @@
                             }
                             current += char;
                         } else if (char === '\n' && !insideQuotes) {
-                            if (current.trim()) lines.push(current);
+                            if (current.trim()) rows.push(current);
                             current = '';
                         } else {
                             current += char;
                         }
                     }
-                    if (current.trim()) lines.push(current);
+                    if (current.trim()) rows.push(current);
                     
-                    // Parse header
-                    const header = lines[0];
+                    const header = rows[0];
                     const keys = this.parseCSVLine(header);
                     
-                    // Parse rows
-                    return lines.slice(1).map(line => {
-                        if (!line.trim()) return null;
+                    return rows.slice(1).map(line => {
                         const values = this.parseCSVLine(line);
                         let obj = {};
                         keys.forEach((k, i) => obj[k] = values[i] || '');
