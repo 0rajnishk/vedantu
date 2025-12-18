@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Agent – Human Handoff Dashboard</title>
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-slate-950 text-slate-100 font-inter">
+
+    <div id="app" class="min-h-screen p-6">
+
+        <!-- Header -->
+        <header class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-3xl font-extrabold tracking-tight">Human Agent Dashboard</h1>
+                <p class="text-slate-400 mt-1">AI → Human Transfer Monitoring Console</p>
+            </div>
+            <div class="flex gap-4">
+                <select v-model="filterType" class="bg-slate-900 border border-slate-700 rounded-lg px-4 py-2">
+                    <option value="">All Users</option>
+                    <option>Student</option>
+                    <option>Parent</option>
+                    <option>Visitor</option>
+                </select>
+                <input v-model="search" placeholder="Search Chat / Name / Doubt"
+                    class="bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 w-72" />
+            </div>
+        </header>
+
+        <!-- Stats -->
+        <section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+            <div class="bg-slate-900 rounded-2xl p-6 border border-slate-800">
+                <p class="text-slate-400 text-sm">Total Conversations</p>
+                <h2 class="text-3xl font-bold mt-2">{{ rows.length }}</h2>
+            </div>
+            <div class="bg-slate-900 rounded-2xl p-6 border border-slate-800">
+                <p class="text-slate-400 text-sm">Transferred to Humans</p>
+                <h2 class="text-3xl font-bold mt-2 text-orange-400">{{ transferredCount }}</h2>
+            </div>
+            <div class="bg-slate-900 rounded-2xl p-6 border border-slate-800">
+                <p class="text-slate-400 text-sm">Students</p>
+                <h2 class="text-3xl font-bold mt-2 text-sky-400">{{ countByType('Student') }}</h2>
+            </div>
+            <div class="bg-slate-900 rounded-2xl p-6 border border-slate-800">
+                <p class="text-slate-400 text-sm">Parents</p>
+                <h2 class="text-3xl font-bold mt-2 text-emerald-400">{{ countByType('Parent') }}</h2>
+            </div>
+        </section>
+
+        <!-- Table -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-800 text-slate-300 text-left">
+                    <tr>
+                        <th class="px-4 py-3">Chat ID</th>
+                        <th class="px-4 py-3">Name</th>
+                        <th class="px-4 py-3">Type</th>
+                        <th class="px-4 py-3">Intent</th>
+                        <th class="px-4 py-3">Class / Exam</th>
+                        <th class="px-4 py-3">Doubt</th>
+                        <th class="px-4 py-3">Transferred</th>
+                        <th class="px-4 py-3">Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="row in filteredRows" :key="row['Chat ID']"
+                        class="border-t border-slate-800 hover:bg-slate-800/40">
+                        <td class="px-4 py-3 font-mono text-xs">{{ row['Chat ID'] }}</td>
+                        <td class="px-4 py-3 font-medium">{{ row['Name'] }}</td>
+                        <td class="px-4 py-3">
+                            <span :class="badgeClass(row['Type'])">{{ row['Type'] }}</span>
+                        </td>
+                        <td class="px-4 py-3 text-slate-300">{{ row['User Intent'] }}</td>
+                        <td class="px-4 py-3 text-slate-400">{{ row['Class'] }} / {{ row['Target Exam'] }}</td>
+                        <td class="px-4 py-3 max-w-sm truncate" :title="row['Doubt']">{{ row['Doubt'] }}</td>
+                        <td class="px-4 py-3">
+                            <span v-if="row['Agent Transferred']==='Yes'"
+                                class="text-orange-400 font-semibold">Yes</span>
+                            <span v-else class="text-emerald-400">No</span>
+                        </td>
+                        <td class="px-4 py-3 text-xs text-slate-400">{{ row['Time Stamp'] }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    search: '',
+                    filterType: '',
+                    rows: []
+                }
+            },
+            computed: {
+                transferredCount() {
+                    return this.rows.filter(r => r['Agent Transferred'] === 'Yes').length
+                },
+                filteredRows() {
+                    return this.rows.filter(r => {
+                        const matchesType = this.filterType ? r['Type'] === this.filterType : true
+                        const q = this.search.toLowerCase()
+                        const matchesSearch = !q ||
+                            Object.values(r).join(' ').toLowerCase().includes(q)
+                        return matchesType && matchesSearch
+                    })
+                }
+            },
+            methods: {
+                countByType(type) {
+                    return this.rows.filter(r => r['Type'] === type).length
+                },
+                badgeClass(type) {
+                    return {
+                        'px-3 py-1 rounded-full text-xs font-semibold bg-sky-500/20 text-sky-400': type === 'Student',
+                        'px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400': type === 'Parent',
+                        'px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-400': type === 'Visitor'
+                    }
+                },
+                parseCSV(text) {
+                    const lines = text.split('\n');
+                    const header = lines[0];
+                    const keys = this.parseCSVLine(header);
+                    
+                    return lines.slice(1).map(line => {
+                        if (!line.trim()) return null;
+                        const values = this.parseCSVLine(line);
+                        let obj = {};
+                        keys.forEach((k, i) => obj[k] = values[i] || '');
+                        return obj;
+                    }).filter(r => r && r['Chat ID']);
+                },
+                parseCSVLine(line) {
+                    const result = [];
+                    let current = '';
+                    let insideQuotes = false;
+                    
+                    for (let i = 0; i < line.length; i++) {
+                        const char = line[i];
+                        const nextChar = line[i + 1];
+                        
+                        if (char === '"') {
+                            if (insideQuotes && nextChar === '"') {
+                                current += '"';
+                                i++;
+                            } else {
+                                insideQuotes = !insideQuotes;
+                            }
+                        } else if (char === ',' && !insideQuotes) {
+                            result.push(current.trim());
+                            current = '';
+                        } else {
+                            current += char;
+                        }
+                    }
+                    result.push(current.trim());
+                    return result;
+                },
+                async fetchSheet() {
+                    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1-aRmuDOSu38Oid975ZiAvS3XER-cpO-ldsmfPz46kP8/export?format=csv&gid=0';
+                    const res = await fetch(SHEET_CSV_URL);
+                    const text = await res.text();
+                    this.rows = this.parseCSV(text);
+                }
+            },
+            mounted() {
+                this.fetchSheet();
+            }
+        }).mount('#app')
+    </script>
+
+</body>
+
+</html>
