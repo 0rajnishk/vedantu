@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat - Human Agent</title>
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: #f8fafc;
+        }
+
+        .glass-morphism {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .message-enter-active {
+            animation: messageSlide 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .bubble-agent {
+            background: linear-gradient(135deg, #1e90ff 0%, #0ea5e9 100%);
+            box-shadow: 0 4px 15px rgba(30, 144, 255, 0.25);
+        }
+
+        .bubble-customer {
+            background: linear-gradient(135deg, #1e90ff 0%, #0ea5e9 100%);
+            box-shadow: 0 4px 15px rgba(30, 144, 255, 0.25);
+        }
+
+        .scrollbar-custom::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .scrollbar-custom::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .scrollbar-custom::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+        }
+
+        .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #764ba2 0%, #667eea 100%);
+        }
+
+        .typing-dot {
+            animation: typingBounce 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typingBounce {
+
+            0%,
+            60%,
+            100% {
+                transform: translateY(0);
+            }
+
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .pulse-ring {
+            animation: pulseRing 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+        }
+
+        @keyframes pulseRing {
+            0% {
+                transform: scale(0.9);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.7;
+            }
+
+            100% {
+                transform: scale(0.9);
+                opacity: 1;
+            }
+        }
+
+        .gradient-border {
+            position: relative;
+            background: white;
+            border-radius: 16px;
+        }
+
+        .gradient-border::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 16px;
+            padding: 2px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+        }
+
+        .shimmer {
+            background: linear-gradient(90deg,
+                    rgba(255, 255, 255, 0) 0%,
+                    rgba(255, 255, 255, 0.3) 50%,
+                    rgba(255, 255, 255, 0) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+
+            100% {
+                background-position: 200% 0;
+            }
+        }
+
+        .chat-header {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(30px);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        }
+
+        .message-input-container {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(30px);
+            box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        .avatar-glow {
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .send-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .send-button:hover:not(:disabled) {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .send-button:active:not(:disabled) {
+            transform: translateY(0) scale(0.95);
+        }
+
+        .status-online {
+            background: #10b981;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.8);
+        }
+
+        .status-offline {
+            background: #6b7280;
+        }
+
+        .connection-banner {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            animation: bannerSlide 0.3s ease-out;
+        }
+
+        @keyframes bannerSlide {
+            from {
+                transform: translateY(-100%);
+            }
+
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .message-time {
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .message-wrapper:hover .message-time {
+            opacity: 1;
+        }
+
+        .input-focus {
+            transition: all 0.3s ease;
+        }
+
+        .input-focus:focus {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.2);
+        }
+
+        .emoji-float {
+            animation: emojiFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes emojiFloat {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-10px) rotate(5deg);
+            }
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        @keyframes particleFloat {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(-100px) scale(0);
+                opacity: 0;
+            }
+        }
+
+        .notification-badge {
+            animation: badgePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes badgePulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+    </style>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+
+<body>
+
+    <div id="app" class="h-screen flex flex-col relative overflow-hidden">
+
+        <!-- Animated Background Particles -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
+            <div class="absolute w-96 h-96 bg-white rounded-full blur-3xl -top-48 -left-48 animate-pulse"></div>
+            <div class="absolute w-96 h-96 bg-purple-300 rounded-full blur-3xl -bottom-48 -right-48 animate-pulse"
+                style="animation-delay: 1s;"></div>
+        </div>
+
+        <!-- Connection Status Banner -->
+        <transition name="slide-down">
+            <div v-if="connectionStatus !== 'connected'"
+                class="connection-banner px-6 py-3 flex items-center justify-center gap-3 shadow-lg z-50">
+                <svg v-if="connectionStatus === 'connecting'" class="animate-spin h-5 w-5 text-white" fill="none"
+                    viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                    </path>
+                </svg>
+                <span class="text-white font-semibold text-sm">
+                    {{ connectionStatus === 'connecting' ? 'Connecting to server...' :
+                    connectionStatus === 'disconnected' ? '⚠ Connection lost. Reconnecting...' :
+                    '⚠ Connection failed: ' + connectionError }}
+                </span>
+            </div>
+        </transition>
+
+        <!-- Header -->
+        <header class="chat-header px-6 py-4 flex items-center justify-between z-40 relative">
+            <div class="flex items-center gap-4">
+                <div class="relative">
+                    <!-- Avatar with Glow Effect -->
+                    <div class="relative">
+                        <div
+                            class="w-12 h-12 rounded-full bg-gradient-to-br from-pink-400 via-purple-400 to-indigo-400 flex items-center justify-center text-white font-bold text-lg shadow-xl avatar-glow">
+                            {{ userName.charAt(0).toUpperCase() }}
+                        </div>
+                        <!-- Online Status with Pulse -->
+                        <div class="absolute -bottom-0.5 -right-0.5">
+                            <div v-if="connectionStatus === 'connected'" class="relative">
+                                <div class="w-4 h-4 status-online rounded-full border-2 border-white"></div>
+                                <div
+                                    class="absolute inset-0 w-4 h-4 status-online rounded-full border-2 border-white pulse-ring">
+                                </div>
+                            </div>
+                            <div v-else class="w-4 h-4 status-offline rounded-full border-2 border-white"></div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h1
+                        class="text-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                        {{ userName }}
+                    </h1>
+                    <p class="text-xs font-medium mt-0.5">
+                        <span v-if="connectionStatus === 'connected'" class="text-emerald-600 flex items-center gap-1">
+                            <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                            Active now
+                        </span>
+                        <span v-else class="text-slate-400">Offline</span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <!-- Chat ID Badge -->
+                <div
+                    class="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200">
+                    <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z">
+                        </path>
+                    </svg>
+                    <span class="text-xs font-mono font-bold text-purple-700">{{ chatId }}</span>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-2">
+                    <button
+                        class="w-10 h-10 rounded-xl bg-white hover:bg-purple-50 flex items-center justify-center transition-all hover:scale-110 shadow-sm">
+                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </button>
+                    <button
+                        class="w-10 h-10 rounded-xl bg-white hover:bg-purple-50 flex items-center justify-center transition-all hover:scale-110 shadow-sm">
+                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z">
+                            </path>
+                        </svg>
+                    </button>
+                    <a href="index.html"
+                        class="ml-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold text-sm hover:shadow-xl transition-all hover:scale-105">
+                        Dashboard
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Chat Messages -->
+        <div class="flex-1 overflow-y-auto scrollbar-custom relative" ref="messagesContainer">
+            <div class="max-w-5xl mx-auto px-6 py-8">
+
+                <!-- Empty State -->
+                <div v-if="messages.length === 0" class="flex flex-col items-center justify-center py-24">
+                    <div class="relative mb-8">
+                        <div
+                            class="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-indigo-400 flex items-center justify-center shadow-2xl">
+                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+                                </path>
+                            </svg>
+                        </div>
+                        <div
+                            class="absolute inset-0 w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-indigo-400 opacity-50 blur-2xl animate-pulse">
+                        </div>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-3">Start Your Conversation</h3>
+                    <p class="text-purple-100 text-center max-w-md">Send a message to {{ userName }} and begin the chat</p>
+                </div>
+
+                <!-- Messages -->
+                <div class="space-y-6">
+                    <transition-group name="message">
+                        <div v-for="(msg, index) in messages" :key="index">
+                            <!-- System Message -->
+                            <div v-if="msg.sender === 'system'" class="flex justify-center my-8">
+                                <div
+                                    class="px-6 py-3 rounded-full bg-slate-200 backdrop-blur-md text-slate-700 text-sm font-medium shadow-lg border border-slate-300">
+                                    {{ msg.text }}
+                                </div>
+                            </div>
+
+                            <!-- User Messages -->
+                            <div v-else class="message-wrapper"
+                                :class="msg.sender === 'agent' ? 'flex justify-end' : 'flex justify-start'">
+                                <div class="flex items-end gap-3 max-w-2xl"
+                                    :class="msg.sender === 'agent' ? 'flex-row-reverse' : 'flex-row'">
+                                    <!-- Avatar -->
+                                    <div class="flex-shrink-0 mb-1">
+                                        <div v-if="msg.sender === 'customer'"
+                                            class="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 via-purple-400 to-indigo-400 flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                                            {{ userName.charAt(0).toUpperCase() }}
+                                        </div>
+                                        <div v-else
+                                            class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 via-purple-400 to-pink-400 flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                                            A
+                                        </div>
+                                    </div>
+
+                                    <!-- Message Bubble -->
+                                    <div>
+                                        <div :class="[
+                                            'px-5 py-3 rounded-2xl relative overflow-hidden',
+                                            msg.sender === 'agent' 
+                                                ? 'bubble-agent text-white rounded-br-md' 
+                                                : 'bubble-customer text-white rounded-bl-md'
+                                        ]">
+                                            <p
+                                                class="text-sm leading-relaxed whitespace-pre-wrap break-words relative z-10">
+                                                {{ msg.text }}</p>
+                                            <!-- Shimmer Effect on Hover -->
+                                            <div
+                                                class="absolute inset-0 shimmer opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
+                                            </div>
+                                        </div>
+                                        <p class="message-time text-xs text-white/60 mt-2 px-2 font-medium"
+                                            :class="msg.sender === 'agent' ? 'text-right' : 'text-left'">
+                                            {{ msg.timestamp }}
+                                            <span v-if="msg.sender === 'agent' && index === messages.length - 1"
+                                                class="ml-2">
+                                                <svg class="w-3 h-3 inline" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd"
+                                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                        clip-rule="evenodd"></path>
+                                                </svg>
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </transition-group>
+                </div>
+
+                <!-- Typing Indicator -->
+                <transition name="message">
+                    <div v-if="isTyping" class="flex justify-start mt-6">
+                        <div class="flex items-end gap-3 max-w-2xl">
+                            <div
+                                class="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 via-purple-400 to-indigo-400 flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                                {{ userName.charAt(0).toUpperCase() }}
+                            </div>
+                            <div class="px-6 py-4 rounded-2xl rounded-bl-md bg-white/90 backdrop-blur-md shadow-xl">
+                                <div class="flex gap-2">
+                                    <div
+                                        class="typing-dot w-2.5 h-2.5 bg-gradient-to-br from-purple-400 to-indigo-400 rounded-full">
+                                    </div>
+                                    <div
+                                        class="typing-dot w-2.5 h-2.5 bg-gradient-to-br from-purple-400 to-indigo-400 rounded-full">
+                                    </div>
+                                    <div
+                                        class="typing-dot w-2.5 h-2.5 bg-gradient-to-br from-purple-400 to-indigo-400 rounded-full">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </transition>
+
+                <div ref="messagesEnd"></div>
+            </div>
+        </div>
+
+        <!-- Message Input -->
+        <div class="message-input-container px-6 py-5 relative z-40">
+            <div class="max-w-5xl mx-auto">
+                <div class="flex items-end gap-4">
+                    <!-- Input Field with Gradient Border -->
+                    <div class="flex-1 relative gradient-border">
+                        <textarea v-model="newMessage" @keydown.enter.exact.prevent="sendMessage" @input="autoResize"
+                            ref="messageInput" :disabled="connectionStatus !== 'connected'"
+                            placeholder="Type your message here..." rows="1"
+                            class="w-full resize-none bg-white rounded-2xl px-5 py-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none input-focus transition-all disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed relative z-10"
+                            style="max-height: 120px; min-height: 48px;"></textarea>
+                    </div>
+
+                    <!-- Attach Button -->
+                    <button
+                        class="flex-shrink-0 w-11 h-11 rounded-xl bg-white hover:bg-purple-50 flex items-center justify-center transition-all hover:scale-110 shadow-sm">
+                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13">
+                            </path>
+                        </svg>
+                    </button>
+
+                    <!-- Send Button -->
+                    <button @click="sendMessage" :disabled="connectionStatus !== 'connected' || !newMessage.trim()"
+                        class="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:transform-none send-button">
+                        <svg class="w-6 h-6 text-white transform rotate-45" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Connection Warning -->
+                <transition name="fade">
+                    <div v-if="connectionStatus !== 'connected'"
+                        class="mt-3 flex items-center gap-2 text-xs text-amber-600 bg-amber-50 px-4 py-2 rounded-lg">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="font-medium">Unable to send messages. Please check your connection.</span>
+                    </div>
+                </transition>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    chatId: '',
+                    userName: '',
+                    messages: [],
+                    newMessage: '',
+                    ws: null,
+                    connectionStatus: 'connecting',
+                    connectionError: '',
+                    isTyping: false,
+                    typingTimeout: null
+                }
+            },
+            methods: {
+                getQueryParam(name) {
+                    const params = new URLSearchParams(window.location.search);
+                    return params.get(name);
+                },
+                initWebSocket() {
+                    const WS_URL = 'https://vikramautomation.app.n8n.cloud/webhook-test/vedantu-chat';
+
+                    this.ws = new WebSocket(WS_URL);
+
+                    this.ws.onopen = () => {
+                        console.log('WebSocket connected');
+                        this.connectionStatus = 'connected';
+                        this.connectionError = '';
+
+                        const initMsg = {
+                            type: 'init',
+                            chatId: this.chatId,
+                            userName: this.userName,
+                            timestamp: new Date().toISOString()
+                        };
+                        this.ws.send(JSON.stringify(initMsg));
+                    };
+
+                    this.ws.onmessage = (event) => {
+                        console.log('RECEIVED:', event.data);
+
+                        try {
+                            const data = JSON.parse(event.data);
+
+                            if (data.type === 'init') {
+                                return;
+                            }
+
+                            if (data.type === 'typing') {
+                                this.handleTypingIndicator(data.isTyping);
+                                return;
+                            }
+
+                            this.messages.push({
+                                sender: 'customer',
+                                text: data.message || JSON.stringify(data),
+                                timestamp: this.formatTime(new Date())
+                            });
+                            this.scrollToBottom();
+                            this.createParticles();
+                        } catch (e) {
+                            this.messages.push({
+                                sender: 'customer',
+                                text: event.data,
+                                timestamp: this.formatTime(new Date())
+                            });
+                            this.scrollToBottom();
+                        }
+                    };
+
+                    this.ws.onerror = (error) => {
+                        console.error('WebSocket error:', error);
+                        this.connectionStatus = 'error';
+                        this.connectionError = 'Failed to establish connection';
+                    };
+
+                    this.ws.onclose = () => {
+                        console.log('WebSocket disconnected');
+                        this.connectionStatus = 'disconnected';
+                        
+                        setTimeout(() => {
+                            if (this.connectionStatus === 'disconnected') {
+                                this.initWebSocket();
+                            }
+                        }, 3000);
+                    };
+                },
+                sendMessage() {
+                    if (!this.newMessage.trim() || this.connectionStatus !== 'connected') {
+                        return;
+                    }
+
+                    const message = this.newMessage.trim();
+                    
+                    this.messages.push({
+                        sender: 'agent',
+                        text: message,
+                        timestamp: this.formatTime(new Date())
+                    });
+
+                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                        const payload = {
+                            type: 'message',
+                            chatId: this.chatId,
+                            sender: 'agent',
+                            message: message,
+                            timestamp: new Date().toISOString()
+                        };
+                        this.ws.send(JSON.stringify(payload));
+                        console.log('SENDING:', payload);
+                    } else {
+                        this.messages.pop();
+                    }
+
+                    this.newMessage = '';
+                    this.$refs.messageInput.style.height = '48px';
+                    this.scrollToBottom();
+                    this.createSendAnimation();
+                },
+                sendQuickMessage(message) {
+                    this.newMessage = message;
+                    this.sendMessage();
+                },
+                autoResize(event) {
+                    const textarea = event.target;
+                    textarea.style.height = '48px';
+                    textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+                },
+                scrollToBottom() {
+                    this.$nextTick(() => {
+                        const container = this.$refs.messagesContainer;
+                        if (container) {
+                            container.scrollTo({
+                                top: container.scrollHeight,
+                                behavior: 'smooth'
+                            });
+                        }
+                    });
+                },
+                formatTime(date) {
+                    return date.toLocaleTimeString('en-US', { 
+                        hour: 'numeric', 
+                        minute: '2-digit',
+                        hour12: true 
+                    });
+                },
+                handleTypingIndicator(isTyping) {
+                    if (this.typingTimeout) {
+                        clearTimeout(this.typingTimeout);
+                    }
+                    
+                    this.isTyping = isTyping;
+                    
+                    if (isTyping) {
+                        this.typingTimeout = setTimeout(() => {
+                            this.isTyping = false;
+                        }, 3000);
+                    }
+                },
+                createParticles() {
+                    const colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c'];
+                    for (let i = 0; i < 5; i++) {
+                        const particle = document.createElement('div');
+                        particle.className = 'particle';
+                        particle.style.cssText = `
+                            width: ${Math.random() * 8 + 4}px;
+                            height: ${Math.random() * 8 + 4}px;
+                            background: ${colors[Math.floor(Math.random() * colors.length)]};
+                            left: ${Math.random() * 100}%;
+                            top: ${Math.random() * 100}%;
+                            animation: particleFloat ${Math.random() * 2 + 1}s ease-out forwards;
+                        `;
+                        this.$refs.messagesContainer.appendChild(particle);
+                        setTimeout(() => particle.remove(), 2000);
+                    }
+                },
+                createSendAnimation() {
+                    const container = this.$refs.messagesContainer;
+                    if (!container) return;
+                    
+                    const ripple = document.createElement('div');
+                    ripple.style.cssText = `
+                        position: absolute;
+                        right: 50px;
+                        bottom: 50px;
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        background: rgba(102, 126, 234, 0.5);
+                        animation: rippleEffect 0.6s ease-out forwards;
+                        pointer-events: none;
+                    `;
+                    container.appendChild(ripple);
+                    setTimeout(() => ripple.remove(), 600);
+                }
+            },
+            mounted() {
+                this.chatId = this.getQueryParam('chatId');
+                this.userName = this.getQueryParam('name') || 'User';
+                
+                if (!this.chatId) {
+                    alert('No Chat ID provided. Redirecting to dashboard.');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                this.initWebSocket();
+
+                this.messages.push({
+                    sender: 'system',
+                    text: `Chat session started with ${this.userName}`,
+                    timestamp: this.formatTime(new Date())
+                });
+
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes rippleEffect {
+                        0% {
+                            transform: scale(1);
+                            opacity: 1;
+                        }
+                        100% {
+                            transform: scale(3);
+                            opacity: 0;
+                        }
+                    }
+                    .fade-enter-active, .fade-leave-active {
+                        transition: opacity 0.3s ease;
+                    }
+                    .fade-enter-from, .fade-leave-to {
+                        opacity: 0;
+                    }
+                    .slide-down-enter-active {
+                        transition: all 0.3s ease-out;
+                    }
+                    .slide-down-leave-active {
+                        transition: all 0.3s ease-in;
+                    }
+                    .slide-down-enter-from {
+                        transform: translateY(-100%);
+                        opacity: 0;
+                    }
+                    .slide-down-leave-to {
+                        transform: translateY(-100%);
+                        opacity: 0;
+                    }
+                `;
+                document.head.appendChild(style);
+            },
+            beforeUnmount() {
+                if (this.ws) {
+                    this.ws.close();
+                }
+                if (this.typingTimeout) {
+                    clearTimeout(this.typingTimeout);
+                }
+            }
+        }).mount('#app')
+    </script>
+
+</body>
+
+</html>

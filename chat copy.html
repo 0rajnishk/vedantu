@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat - Human Agent</title>
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-gradient-to-br from-slate-900 via-slate-950 to-black text-slate-100 font-inter">
+
+    <div id="app" class="min-h-screen flex flex-col">
+
+        <!-- Connection Status Banner -->
+        <div v-if="connectionStatus !== 'connected'" class="bg-gradient-to-r from-red-600 to-red-700 border-b border-red-500 p-4 flex items-center gap-3 shadow-lg">
+            <div class="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" v-if="connectionStatus === 'connecting'"></div>
+            <p v-if="connectionStatus === 'connecting'" class="text-white font-semibold">
+                Connecting to WebSocket...
+            </p>
+            <p v-else-if="connectionStatus === 'disconnected'" class="text-white font-semibold">
+                ✗ WebSocket Disconnected
+            </p>
+            <p v-else-if="connectionStatus === 'error'" class="text-white font-semibold">
+                ✗ Connection Failed - {{ connectionError }}
+            </p>
+        </div>
+
+        <div v-else class="bg-gradient-to-r from-emerald-600 to-emerald-700 border-b border-emerald-500 p-3 flex items-center gap-2 shadow-lg">
+            <div class="h-3 w-3 bg-white rounded-full animate-pulse"></div>
+            <p class="text-white font-semibold">✓ Connected to WebSocket</p>
+        </div>
+
+        <!-- Header -->
+        <header class="bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700/50 p-6 flex items-center justify-between shadow-xl">
+            <div>
+                <h1 class="text-4xl font-black tracking-tight bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Chat with {{ userName }}</h1>
+                <p class="text-slate-400 text-sm mt-2">Chat ID: <span class="font-mono text-cyan-400 font-bold">{{ chatId }}</span></p>
+            </div>
+            <a href="index.html" class="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-6 py-3 rounded-lg text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105">
+                Back to Dashboard
+            </a>
+        </header>
+
+        <!-- Chat Messages -->
+        <div class="flex-1 overflow-y-auto p-8 space-y-5">
+            <div v-if="messages.length === 0" class="text-center text-slate-500 mt-20">
+                <p class="text-lg font-semibold">No messages yet. Start the conversation.</p>
+            </div>
+            <div v-for="(msg, index) in messages" :key="index"
+                :class="msg.sender === 'agent' ? 'flex justify-end' : 'flex justify-start'">
+                <div :class="msg.sender === 'agent' 
+                    ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white max-w-md px-5 py-3 rounded-2xl rounded-tr-none shadow-lg' 
+                    : 'bg-gradient-to-br from-emerald-600 to-emerald-700 text-white max-w-md px-5 py-3 rounded-2xl rounded-tl-none shadow-lg'">
+                    <p class="text-xs font-bold mb-2 opacity-90">{{ msg.sender === 'agent' ? 'YOU' : 'CUSTOMER' }}</p>
+                    <p class="text-sm leading-relaxed font-medium">{{ msg.text }}</p>
+                    <p class="text-xs mt-2 opacity-75 font-semibold">{{ msg.timestamp }}</p>
+                </div>
+            </div>
+            <div ref="messagesEnd"></div>
+        </div>
+
+        <!-- Message Input -->
+        <div class="bg-gradient-to-r from-slate-800 to-slate-900 border-t border-slate-700/50 p-6 shadow-2xl">
+            <div class="max-w-6xl mx-auto">
+                <div class="flex items-end gap-3">
+                    <div class="flex-1 relative">
+                        <input v-model="newMessage" @keyup.enter="sendMessage" :disabled="connectionStatus !== 'connected'"
+                            placeholder="Type your message here..."
+                            :class="connectionStatus === 'connected'
+                                ? 'w-full bg-slate-700/40 border-2 border-slate-600 hover:border-slate-500 rounded-xl px-5 py-3 text-slate-100 placeholder-slate-400 focus:outline-none focus:border-cyan-500 focus:bg-slate-700/60 transition-all duration-200 font-medium resize-none'
+                                : 'w-full bg-slate-800/40 border-2 border-slate-700 rounded-xl px-5 py-3 text-slate-500 placeholder-slate-600 cursor-not-allowed font-medium opacity-60'" />
+                    </div>
+                    <button @click="sendMessage" :disabled="connectionStatus !== 'connected' || !newMessage.trim()"
+                        :class="connectionStatus === 'connected' && newMessage.trim()
+                            ? 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 cursor-pointer flex-shrink-0'
+                            : 'bg-slate-700/50 text-slate-500 px-6 py-3 rounded-xl font-bold cursor-not-allowed opacity-40 flex-shrink-0'">
+                        Send
+                    </button>
+                </div>
+                <p v-if="connectionStatus !== 'connected'" class="text-red-400 text-xs mt-3 font-semibold">
+                    ⚠ Cannot send messages — {{ connectionStatus === 'connecting' ? 'Connecting...' : connectionStatus === 'disconnected' ? 'Disconnected from server' : 'Connection failed' }}
+                </p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    chatId: '',
+                    userName: '',
+                    messages: [],
+                    newMessage: '',
+                    ws: null,
+                    connectionStatus: 'connecting',
+                    connectionError: ''
+                }
+            },
+            methods: {
+                getQueryParam(name) {
+                    const params = new URLSearchParams(window.location.search);
+                    return params.get(name);
+                },
+                initWebSocket() {
+                    // Dummy WebSocket URL - replace with actual URL
+                    const WS_URL = 'wss://echo.websocket.org/';
+                    
+                    this.ws = new WebSocket(WS_URL);
+
+                    this.ws.onopen = () => {
+                        console.log('WebSocket connected');
+                        this.connectionStatus = 'connected';
+                        this.connectionError = '';
+                        console.log('✓ WebSocket Connected');
+                        
+                        // Send initial message with chat ID
+                        const initMsg = {
+                            type: 'init',
+                            chatId: this.chatId,
+                            userName: this.userName,
+                            timestamp: new Date().toISOString()
+                        };
+                        const msgStr = JSON.stringify(initMsg);
+                        console.log('SENDING (INIT):', initMsg);
+                        this.ws.send(msgStr);
+                    };
+
+                    this.ws.onmessage = (event) => {
+                        console.log('Message received:', event.data);
+                        console.log('RECEIVED:', event.data);
+                        
+                        try {
+                            const data = JSON.parse(event.data);
+                            console.log('Parsed data:', data);
+                            console.log('Type:', data.type, 'Sender:', data.sender);
+                            
+                            // Skip init messages
+                            if (data.type === 'init') {
+                                console.log('Skipping init message');
+                                return;
+                            }
+                            
+                            // Display all messages - received messages are always from customer side
+                            console.log('Adding message to display');
+                            this.messages.push({
+                                sender: 'customer',
+                                text: data.message || JSON.stringify(data),
+                                timestamp: new Date().toLocaleTimeString()
+                            });
+                            this.scrollToBottom();
+                        } catch (e) {
+                            console.log('Failed to parse JSON:', e);
+                            console.log('Treating as plain text');
+                            // If not JSON, treat as plain text
+                            this.messages.push({
+                                sender: 'customer',
+                                text: event.data,
+                                timestamp: new Date().toLocaleTimeString()
+                            });
+                            this.scrollToBottom();
+                        }
+                    };
+
+                    this.ws.onerror = (error) => {
+                        console.error('WebSocket error:', error);
+                        this.connectionStatus = 'error';
+                        this.connectionError = 'Failed to establish connection';
+                        console.error('✗ WebSocket Error:', error);
+                    };
+
+                    this.ws.onclose = () => {
+                        console.log('WebSocket disconnected');
+                        this.connectionStatus = 'disconnected';
+                        console.log('✗ WebSocket Closed/Disconnected');
+                    };
+                },
+                sendMessage() {
+                    if (!this.newMessage.trim() || this.connectionStatus !== 'connected') {
+                        return;
+                    }
+
+                    const message = this.newMessage;
+                    
+                    // Add to local chat immediately (don't wait for echo)
+                    this.messages.push({
+                        sender: 'agent',
+                        text: message,
+                        timestamp: new Date().toLocaleTimeString()
+                    });
+
+                    // Send to WebSocket (REQUIRED - no fallback)
+                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                        const payload = {
+                            type: 'message',
+                            chatId: this.chatId,
+                            sender: 'agent',
+                            message: message,
+                            timestamp: new Date().toISOString()
+                        };
+                        const payloadStr = JSON.stringify(payload);
+                        console.log('SENDING:', payload);
+                        this.ws.send(payloadStr);
+                        console.log('Message sent via WebSocket:', payload);
+                    } else {
+                        console.error('WebSocket not connected - message NOT sent');
+                        // Remove the message that was added since it couldn't be sent
+                        this.messages.pop();
+                        console.error('✗ Error: Not connected to WebSocket. Message was not sent.');
+                    }
+
+                    this.newMessage = '';
+                    this.scrollToBottom();
+                },
+                scrollToBottom() {
+                    this.$nextTick(() => {
+                        const messagesEnd = this.$refs.messagesEnd;
+                        if (messagesEnd) {
+                            messagesEnd.scrollIntoView({ behavior: 'smooth' });
+                        }
+                    });
+                }
+            },
+            mounted() {
+                this.chatId = this.getQueryParam('chatId');
+                this.userName = this.getQueryParam('name') || 'User';
+                
+                if (!this.chatId) {
+                    alert('No Chat ID provided. Redirecting to dashboard.');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                this.initWebSocket();
+
+                // Add initial system message
+                this.messages.push({
+                    sender: 'system',
+                    text: `Chat started with ${this.userName}`,
+                    timestamp: new Date().toLocaleTimeString()
+                });
+            },
+            beforeUnmount() {
+                if (this.ws) {
+                    this.ws.close();
+                }
+            }
+        }).mount('#app')
+    </script>
+
+</body>
+
+</html>
