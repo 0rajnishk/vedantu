@@ -201,6 +201,11 @@ def api_logout():
     session.clear()
     return jsonify({'success': True, 'message': 'Logged out'})
 
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
 @app.route('/api/auth/check', methods=['GET'])
 def check_auth():
     if 'user_id' not in session:
