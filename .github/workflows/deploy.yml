@@ -50,7 +50,6 @@ jobs:
           echo "Building $IMAGE with Cloud Build from context: ${DOCKER_CONTEXT}"
           gcloud builds submit "${DOCKER_CONTEXT}" \
             --tag "$IMAGE" \
-            --dockerfile="${DOCKERFILE}" \
             --project="${PROJECT_ID}"
 
       - name: Sync Environment Secrets to Secret Manager
