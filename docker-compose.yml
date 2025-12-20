@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  vedantu-chat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vedantu-chat-app
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    networks:
+      - vedantu-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/auth/check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  vedantu-network:
+    driver: bridge

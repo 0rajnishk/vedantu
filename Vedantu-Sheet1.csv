@@ -1,0 +1,63 @@
+Sno,Chat ID ,Name,Type (Parent/Student/Visitor),User Intent,AI Response,Class,Target Exam,School Board,School Medium,Location,Doubt,Free Content,Ranking,Agent Transferred,Time Stamp,Conversation State
+1,555555,XXX,Parent,"
+
+
+User: Can you clarify on Electromagnetic Induction ?
+","
+
+
+Bot:  Electromagnetic Induction EMI occurs when an electromotive force emf is induced in a circuit due to a change in the magnetic flux linked with the circuit The magnetic flux, represented as Φ  BA cosθ, can be altered by changing:
+i The magnitude of the magnetic field B
+ii The area A of the region, which can be done by shrinking, stretching, or modifying the coil's shape
+iii The angle θ between the magnetic field B and the normal to the surface area A, thereby modifying their relative orientation
+
+According to Faraday's second law, the induced emf is given by e  -dΦ/dt The integral form of Faraday's laws of EMI is expressed as ∫Ein⋅dl  -dΦ/dt",,,,,,,,30%,Yet to be transferred,,
+2,1139898947,Uma Mageswari,Visitor,"
+
+
+User: Can you clarify on Electromagnetic Induction ?
+","
+
+
+Bot:  Electromagnetic Induction EMI occurs when an electromotive force emf is induced in a circuit due to a change in the magnetic flux linked with the circuit The magnetic flux, represented as Φ  BA cosθ, can be altered by changing:
+i The magnitude of the magnetic field B
+ii The area A of the region, which can be done by shrinking, stretching, or modifying the coil's shape
+iii The angle θ between the magnetic field B and the normal to the surface area A, thereby modifying their relative orientation
+
+According to Faraday's second law, the induced emf is given by e  -dΦ/dt The integral form of Faraday's laws of EMI is expressed as ∫Ein⋅dl  -dΦ/dt",,,,,,,,,,2025-12-19T16:22:06.032+05:30,
+3,5287164993,Gengashree,Student,"
+
+
+User: Can you clarify on Electromagnetic Induction ?
+
+
+
+User: Can you share more information on Magnetic Flux ?
+
+
+
+User: Can you share details on Ohm's Law ?
+
+
+
+User: What about Faraday's Laws ?
+","
+
+
+Bot:  Electromagnetic Induction EMI occurs when an electromotive force emf is induced in a circuit due to a change in the magnetic flux linked with the circuit The magnetic flux, represented as Φ  BA cosθ, can be altered by changing:
+i The magnitude of the magnetic field B
+ii The area A of the region, which can be done by shrinking, stretching, or modifying the coil's shape
+iii The angle θ between the magnetic field B and the normal to the surface area A, thereby modifying their relative orientation
+
+According to Faraday's second law, the induced emf is given by e  -dΦ/dt The integral form of Faraday's laws of EMI is expressed as ∫Ein⋅dl  -dΦ/dt
+
+
+Bot:  The magnetic flux associated with an area placed in a magnetic field is equal to the total number of magnetic lines of force passing naturally through that area It is represented by the formula Net flux through the surface   ∮ B ⋅ dA  BA cosθ, where θ is the angle between the area vector and the magnetic field vector If θ  0, then   BA, and if θ  90°, then   0 Magnetic flux is a scalar quantity Its SI unit is weber wb, and the CGS unit is Maxwell or Gauss·cm² One weber is equal to 10^8 Maxwell Other units include N·m²/Amp, Joule/Amp, Volt·Coulomb/Amp, Tesla·m², Volt·sec, Ohm·Coulomb, and Henry·Amp Its dimensional formula is ML²T⁻²A⁻¹
+
+
+Bot:  I do not have information on that in my knowledge base Please refer to https://wwwvedantucom/ved-ai for more clarifications
+
+
+Bot:  Faraday's Laws of Emi:
+i First law: An induced emf is formed in a circuit whenever the number of magnetic lines of force magnetic flux travelling through it changes The induced emf lasts only as long as the flux is changing or being cut
+ii Second law: The induced emf is calculated from the rate of change of magnetic flux, represented as e  -dφ/dt, which is known as the integral form of Faraday's laws of EMI",Grade 10,Academic Doubts,,,,,,,,2025-12-20T09:18:31.818+05:30,

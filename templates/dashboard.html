@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>Dashboard - Vedantu Chat</title>
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: #f8fafc;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="min-h-screen p-8">
+        <!-- Header -->
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center justify-between mb-12">
+                <div>
+                    <h1 class="text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+                        Vedantu Chat Dashboard
+                    </h1>
+                    <p class="text-slate-600">Welcome, {{ userId }}</p>
+                </div>
+                <a href="/logout"
+                    class="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold rounded-lg hover:shadow-xl transition-all hover:scale-105">
+                    Logout
+                </a>
+            </div>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div class="bg-white rounded-xl p-6 shadow-sm hover:shadow-lg transition-all">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-slate-600 text-sm font-medium">Total Chats</p>
+                            <p class="text-3xl font-bold text-slate-900 mt-2">{{ sessions.length }}</p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path
+                                    d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5z">
+                                </path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 shadow-sm hover:shadow-lg transition-all">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-slate-600 text-sm font-medium">Total Messages</p>
+                            <p class="text-3xl font-bold text-slate-900 mt-2">{{ totalMessages }}</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                            <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path
+                                    d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z">
+                                </path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 shadow-sm hover:shadow-lg transition-all">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-slate-600 text-sm font-medium">Active Now</p>
+                            <p class="text-3xl font-bold text-slate-900 mt-2">{{ activeSessions }}</p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                            <svg class="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2z"
+                                    clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Sessions Table -->
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div class="px-6 py-6 border-b border-slate-200 flex items-center justify-between">
+                    <h2 class="text-xl font-bold text-slate-900">Active Chat Sessions</h2>
+                    <div class="flex items-center gap-2">
+                        <button @click="refreshSessions"
+                            class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition-all">
+                            Refresh Sheets
+                        </button>
+                        <button @click="loadSessions"
+                            class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition-all">
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <div v-if="loading" class="p-12 text-center">
+                    <p class="text-slate-600">Loading sessions...</p>
+                </div>
+
+                <div v-else-if="sessions.length === 0" class="p-12 text-center">
+                    <p class="text-slate-600">No active chat sessions</p>
+                </div>
+
+                <div v-else class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gradient-to-r from-purple-600 to-indigo-600 sticky top-0">
+                            <tr>
+                                <th class="px-4 py-4 text-left text-xs font-semibold text-white">Sno</th>
+                                <th class="px-4 py-4 text-left text-xs font-semibold text-white">Chat ID</th>
+                                <th class="px-4 py-4 text-left text-xs font-semibold text-white">User Name</th>
+                                <th class="px-4 py-4 text-left text-xs font-semibold text-white">Class</th>
+                                <th class="px-4 py-4 text-left text-xs font-semibold text-white">Target Exam</th>
+                                <th class="px-4 py-4 text-left text-xs font-semibold text-white">School Board</th>
+                                <th class="px-4 py-4 text-left text-xs font-semibold text-white">Type</th>
+                                <th class="px-4 py-4 text-left text-xs font-semibold text-white">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                            <tr v-for="session in sessions" :key="session.chatId"
+                                class="hover:bg-slate-50 transition-colors">
+                                <td class="px-4 py-4 text-xs font-medium text-slate-900">{{ session.sno }}</td>
+                                <td class="px-4 py-4 text-xs font-mono text-slate-900 font-semibold">{{ session.chatId }}</td>
+                                <td class="px-4 py-4 text-xs text-slate-700 font-medium">{{ session.name || '-' }}</td>
+                                <td class="px-4 py-4 text-xs text-slate-700">{{ session.class || '-' }}</td>
+                                <td class="px-4 py-4 text-xs text-slate-700">{{ session.targetExam || '-' }}</td>
+                                <td class="px-4 py-4 text-xs text-slate-700">{{ session.schoolBoard || '-' }}</td>
+                                <td class="px-4 py-4 text-xs">
+                                    <span class="px-2 py-1 bg-purple-100 text-purple-700 rounded-md font-medium">
+                                        {{ session.type || 'N/A' }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-4 text-xs">
+                                    <a :href="`/chat/${session.chatId}?name=${encodeURIComponent(session.name)}`"
+                                        class="px-3 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium rounded-lg hover:shadow-lg transition-all inline-block text-xs whitespace-nowrap">
+                                        Chat
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    userId: '',
+                    sessions: [],
+                    loading: false,
+                    refreshInterval: null
+                }
+            },
+            computed: {
+                totalMessages() {
+                    return this.sessions.reduce((sum, s) => sum + (s.messageCount || 0), 0);
+                },
+                activeSessions() {
+                    return this.sessions.length;
+                }
+            },
+            methods: {
+                async loadSessions() {
+                    this.loading = true;
+                    try {
+                        const response = await fetch('/api/chat-sessions');
+                        const data = await response.json();
+                        this.sessions = data.sessions || [];
+                    } catch (error) {
+                        console.error('Error loading sessions:', error);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async refreshSessions() {
+                    try {
+                        const response = await fetch('/api/refresh-sheets', { method: 'POST' });
+                        const data = await response.json();
+                        alert(data.message || 'Sheets refreshed');
+                        await this.loadSessions();
+                    } catch (error) {
+                        console.error('Error refreshing sheets:', error);
+                        alert('Error refreshing sheets: ' + error.message);
+                    }
+                },
+                formatDate(dateString) {
+                    if (!dateString) return 'N/A';
+                    try {
+                        const date = new Date(dateString);
+                        return date.toLocaleString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    } catch (e) {
+                        return dateString;
+                    }
+                }
+            },
+            mounted() {
+                // Extract userId from the page context (passed from Flask)
+                const userElement = document.querySelector('[data-user-id]');
+                this.userId = userElement?.getAttribute('data-user-id') || 'Agent';
+
+                // Load sessions on mount
+                this.loadSessions();
+
+                // Refresh every 10 seconds
+                this.refreshInterval = setInterval(() => {
+                    this.loadSessions();
+                }, 10000);
+            },
+            beforeUnmount() {
+                if (this.refreshInterval) {
+                    clearInterval(this.refreshInterval);
+                }
+            }
+        }).mount('#app');
+
+        // Get user ID from Flask context
+        document.addEventListener('DOMContentLoaded', () => {
+            const userIdElement = document.body.getAttribute('data-user-id');
+            if (userIdElement) {
+                document.querySelector('[data-user-id]').setAttribute('data-user-id', userIdElement);
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -579,11 +579,12 @@
                     userName: '',
                     messages: [],
                     newMessage: '',
-                    ws: null,
-                    connectionStatus: 'connecting',
+                    connectionStatus: 'connected',
                     connectionError: '',
                     isTyping: false,
-                    typingTimeout: null
+                    typingTimeout: null,
+                    pollInterval: null,
+                    isSending: false
                 }
             },
             methods: {
@@ -592,79 +593,43 @@
                     return params.get(name);
                 },
                 initWebSocket() {
-                    const WS_URL = 'https://vikramautomation.app.n8n.cloud/webhook-test/vedantu-chat';
-
-                    this.ws = new WebSocket(WS_URL);
-
-                    this.ws.onopen = () => {
-                        console.log('WebSocket connected');
-                        this.connectionStatus = 'connected';
-                        this.connectionError = '';
-
-                        const initMsg = {
-                            type: 'init',
-                            chatId: this.chatId,
-                            userName: this.userName,
-                            timestamp: new Date().toISOString()
-                        };
-                        this.ws.send(JSON.stringify(initMsg));
-                    };
-
-                    this.ws.onmessage = (event) => {
-                        console.log('RECEIVED:', event.data);
-
-                        try {
-                            const data = JSON.parse(event.data);
-
-                            if (data.type === 'init') {
-                                return;
-                            }
-
-                            if (data.type === 'typing') {
-                                this.handleTypingIndicator(data.isTyping);
-                                return;
-                            }
-
-                            this.messages.push({
-                                sender: 'customer',
-                                text: data.message || JSON.stringify(data),
-                                timestamp: this.formatTime(new Date())
-                            });
-                            this.scrollToBottom();
-                            this.createParticles();
-                        } catch (e) {
-                            this.messages.push({
-                                sender: 'customer',
-                                text: event.data,
-                                timestamp: this.formatTime(new Date())
-                            });
-                            this.scrollToBottom();
-                        }
-                    };
-
-                    this.ws.onerror = (error) => {
-                        console.error('WebSocket error:', error);
-                        this.connectionStatus = 'error';
-                        this.connectionError = 'Failed to establish connection';
-                    };
-
-                    this.ws.onclose = () => {
-                        console.log('WebSocket disconnected');
-                        this.connectionStatus = 'disconnected';
-                        
-                        setTimeout(() => {
-                            if (this.connectionStatus === 'disconnected') {
-                                this.initWebSocket();
-                            }
-                        }, 3000);
-                    };
+                    // Using HTTP polling instead of WebSocket
+                    this.connectionStatus = 'connected';
+                    this.connectionError = '';
+                    console.log('Connected via HTTP polling');
+                    this.startPolling();
                 },
-                sendMessage() {
-                    if (!this.newMessage.trim() || this.connectionStatus !== 'connected') {
+
+                startPolling() {
+                    // Poll for new messages every 2 seconds
+                    this.pollInterval = setInterval(async () => {
+                        try {
+                            const response = await fetch(`/api/poll-messages/${this.chatId}`);
+                            const data = await response.json();
+
+                            if (data.hasMessages && data.messages) {
+                                data.messages.forEach(msg => {
+                                    this.messages.push({
+                                        sender: msg.sender || 'customer',
+                                        text: msg.text,
+                                        timestamp: this.formatTime(new Date(msg.timestamp))
+                                    });
+                                });
+                                this.scrollToBottom();
+                                this.createParticles();
+                            }
+                        } catch (error) {
+                            console.error('Polling error:', error);
+                        }
+                    }, 2000);
+                },
+                async sendMessage() {
+                    if (!this.newMessage.trim() || this.connectionStatus !== 'connected' || this.isSending) {
                         return;
                     }
 
                     const message = this.newMessage.trim();
+                    this.isSending = true;
                     
                     this.messages.push({
                         sender: 'agent',
@@ -672,18 +637,30 @@
                         timestamp: this.formatTime(new Date())
                     });
 
-                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    try {
                         const payload = {
-                            type: 'message',
                             chatId: this.chatId,
                             sender: 'agent',
                             message: message,
                             timestamp: new Date().toISOString()
                         };
-                        this.ws.send(JSON.stringify(payload));
+                        
+                        const response = await fetch('/api/send-message', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const data = await response.json();
                         console.log('SENDING:', payload);
-                    } else {
+                        console.log('Response:', data);
+                    } catch (error) {
+                        console.error('Send message error:', error);
                         this.messages.pop();
+                    } finally {
+                        this.isSending = false;
                     }
 
                     this.newMessage = '';
@@ -822,11 +799,15 @@
                 document.head.appendChild(style);
             },
             beforeUnmount() {
-                if (this.ws) {
-                    this.ws.close();
-                }
+                this.stopPolling();
                 if (this.typingTimeout) {
                     clearTimeout(this.typingTimeout);
+                }
+            },
+            stopPolling() {
+                if (this.pollInterval) {
+                    clearInterval(this.pollInterval);
+                    this.pollInterval = null;
                 }
             }
         }).mount('#app')
