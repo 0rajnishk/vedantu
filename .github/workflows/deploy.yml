@@ -4,7 +4,9 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - "deploy/**"
+      - "**"
+      - "!README.md"
+      - "!*.md"
   workflow_dispatch: {}
 
 permissions:
@@ -20,7 +22,6 @@ env:
   IMAGE_BASE: us-central1-docker.pkg.dev/vikram-internal-projects/vikram-images/vedantu-c-desicrew
   DOCKER_CONTEXT: .
   DOCKERFILE: Dockerfile
-  SECRET_NAME: vedantu-c-desicrew-config
 
 jobs:
   build-and-deploy:
@@ -58,6 +59,8 @@ jobs:
         run: |
           set -euo pipefail
           
+          SECRET_NAME="vedantu-c-desicrew-config"
+          
           echo "Syncing app configuration to Secret Manager: ${SECRET_NAME}"
 
           # Create secret if it doesn't exist
@@ -72,7 +75,14 @@ jobs:
             --data-file=- \
             --project="${PROJECT_ID}"
 
-          echo "Configuration synced to Secret Manager."
+          # Grant Compute Engine service account permission to access the secret
+          COMPUTE_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+          gcloud secrets add-iam-policy-binding "${SECRET_NAME}" \
+            --member="serviceAccount:${COMPUTE_SA}" \
+            --role="roles/secretmanager.secretAccessor" \
+            --project="${PROJECT_ID}"
+
+          echo "Configuration synced to Secret Manager and permissions granted."
 
       - name: Deploy to Cloud Run
         run: |
@@ -85,7 +95,11 @@ jobs:
             --region "${REGION}" \
             --platform managed \
             --allow-unauthenticated \
-            --set-secrets="CONFIG=${SECRET_NAME}:latest" \
+            --set-env-vars="FLASK_ENV=production,PYTHONUNBUFFERED=1" \
+            --memory="1Gi" \
+            --cpu="2" \
+            --timeout="300s" \
+            --max-instances="5" \
             --project "${PROJECT_ID}"
 
       - name: Print deployed service URL
