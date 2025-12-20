@@ -374,6 +374,7 @@ def get_chat_sessions():
                 'targetExam': chat['targetExam'],
                 'schoolBoard': chat['schoolBoard'],
                 'type': chat['type'],
+                'agentTransferred': chat['agentTransferred'],
                 'userIntent': chat['userIntent'],
                 'timestamp': chat['timestamp']
             })
