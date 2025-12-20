@@ -85,7 +85,6 @@ jobs:
             --region "${REGION}" \
             --platform managed \
             --allow-unauthenticated \
-            --service-account="vedantu-c-desicrew-sa@${PROJECT_ID}.iam.gserviceaccount.com" \
             --set-secrets="CONFIG=${SECRET_NAME}:latest" \
             --project "${PROJECT_ID}"
 
