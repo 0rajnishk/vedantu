@@ -21,16 +21,17 @@ COPY static/ ./static/
 COPY templates/ ./templates/
 
 # Expose port
-EXPOSE 5000
+EXPOSE 8080
 
 # Set environment variables
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
 ENV PYTHONUNBUFFERED=1
+ENV PORT=8080
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:5000/api/auth/check')" || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD python -c "import requests; requests.get('http://localhost:8080/api/auth/check')" || exit 1
 
 # Run Flask app
 CMD ["python", "app.py"]

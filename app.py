@@ -438,6 +438,9 @@ if __name__ == '__main__':
     # Create static directory if it doesn't exist
     os.makedirs('static', exist_ok=True)
     
+    # Get port from environment variable or default to 5000
+    port = int(os.environ.get('PORT', 5000))
+    
     print("=" * 60)
     print("Flask Server Starting...")
     print("=" * 60)
@@ -446,7 +449,7 @@ if __name__ == '__main__':
         print(f"  User ID: {user_id}")
         print(f"  Password: {password}")
     print("\n" + "=" * 60)
-    print("Server running on: http://localhost:5000")
+    print(f"Server running on: http://localhost:{port}")
     print("=" * 60)
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=port)
